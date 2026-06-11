@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PRODUCER
+  FIELD_TECH
+  AGRONOMIST
+  INSTITUTION
+  ADMIN
+}
+
+enum SensorType {
+  SOIL_MOISTURE
+  AMBIENT_TEMPERATURE
+  AMBIENT_HUMIDITY
+}
+
+enum SensorStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+}
+
+enum ReadingOrigin {
+  SIMULATED
+  DEVICE
+  MANUAL
+}
+
+enum AlertType {
+  LOW_SOIL_MOISTURE
+  FROST_RISK
+  HIGH_AMBIENT_HUMIDITY
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum FieldDecisionStatus {
+  APPLIED
+  DISCARDED
+  PENDING_REVIEW
+}
+
+model Organization {
+  id        String     @id @default(cuid())
+  name      String
+  type      String?
+  users     User[]
+  producers Producer[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model User {
+  id             String        @id @default(cuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  name           String
+  email          String        @unique
+  passwordHash   String
+  role           UserRole      @default(ADMIN)
+  fieldDecisions FieldDecision[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Producer {
+  id             String        @id @default(cuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  fullName       String
+  documentNumber String?
+  phone          String?
+  department     String        @default("Boyaca")
+  municipality   String?
+  village        String?
+  notes          String?
+  farms          Farm[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Farm {
+  id           String   @id @default(cuid())
+  producerId   String
+  producer     Producer @relation(fields: [producerId], references: [id], onDelete: Cascade)
+  name         String
+  department   String   @default("Boyaca")
+  municipality String?
+  village      String?
+  altitudeM    Int?
+  latitude     Decimal? @db.Decimal(9, 6)
+  longitude    Decimal? @db.Decimal(9, 6)
+  areaHa       Decimal? @db.Decimal(10, 2)
+  plots        Plot[]
+  fieldDecisions FieldDecision[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Plot {
+  id          String   @id @default(cuid())
+  farmId      String
+  farm        Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  name        String
+  crop        String
+  areaHa      Decimal? @db.Decimal(10, 2)
+  plantedAt   DateTime?
+  status      String   @default("MONITORED")
+  sensors     Sensor[]
+  alerts      Alert[]
+  fieldDecisions FieldDecision[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Sensor {
+  id               String       @id @default(cuid())
+  plotId           String
+  plot             Plot         @relation(fields: [plotId], references: [id], onDelete: Cascade)
+  name             String
+  type             SensorType
+  unit             String
+  status           SensorStatus @default(ACTIVE)
+  relativeLocation String?
+  readings         Reading[]
+  alerts           Alert[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+model Reading {
+  id        String        @id @default(cuid())
+  sensorId  String
+  sensor    Sensor        @relation(fields: [sensorId], references: [id], onDelete: Cascade)
+  value     Decimal       @db.Decimal(10, 2)
+  unit      String
+  origin    ReadingOrigin @default(SIMULATED)
+  takenAt   DateTime      @default(now())
+  createdAt DateTime      @default(now())
+
+  @@index([sensorId, takenAt])
+}
+
+model Alert {
+  id            String        @id @default(cuid())
+  plotId        String
+  plot          Plot          @relation(fields: [plotId], references: [id], onDelete: Cascade)
+  sensorId      String?
+  sensor        Sensor?       @relation(fields: [sensorId], references: [id], onDelete: SetNull)
+  type          AlertType
+  severity      AlertSeverity
+  status        AlertStatus   @default(ACTIVE)
+  message       String
+  detectedValue Decimal?      @db.Decimal(10, 2)
+  threshold     Decimal?      @db.Decimal(10, 2)
+  createdAt     DateTime      @default(now())
+  acknowledgedAt DateTime?
+  resolvedAt    DateTime?
+  fieldDecisions FieldDecision[]
+
+  @@index([plotId, status, createdAt])
+}
+
+model FieldDecision {
+  id            String              @id @default(cuid())
+  farmId        String
+  farm          Farm                @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  plotId        String
+  plot          Plot                @relation(fields: [plotId], references: [id], onDelete: Cascade)
+  alertId       String?
+  alert         Alert?              @relation(fields: [alertId], references: [id], onDelete: SetNull)
+  userId        String?
+  user          User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  status        FieldDecisionStatus
+  title         String
+  actionTaken   String
+  reason        String
+  waterImpactM3 Decimal?            @db.Decimal(10, 2)
+  decidedAt     DateTime            @default(now())
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([farmId, decidedAt])
+  @@index([plotId, decidedAt])
+  @@index([alertId])
+}
