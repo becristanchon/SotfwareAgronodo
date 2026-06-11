@@ -19,10 +19,11 @@ export function SensorForm({ plots }: { plots: Plot[] }) {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setIsSubmitting(true);
     setStatus(initialStatus);
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const type = String(formData.get("type") ?? "SOIL_MOISTURE") as SensorType;
 
     const payload = {
@@ -41,7 +42,7 @@ export function SensorForm({ plots }: { plots: Plot[] }) {
     });
 
     if (response.ok) {
-      event.currentTarget.reset();
+      form.reset();
       setSensorType("SOIL_MOISTURE");
       setStatus({ type: "success", message: "Sensor creado correctamente." });
     } else {

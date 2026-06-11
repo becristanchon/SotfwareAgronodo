@@ -8,18 +8,30 @@ import { Sparkline } from "@/components/sparkline";
 import { StatCard } from "@/components/stat-card";
 import { TrendBadge } from "@/components/trend-badge";
 import {
-  getSensorPlot,
-  getSensorReadings,
-  getSensorTrend,
-  plots,
-  sensors,
-} from "@/lib/demo-data";
+  getPersistentPlots,
+  getPersistentSensors,
+  getSensorPlotForView,
+  getSensorReadingsForView,
+  getSensorTrendForView,
+} from "@/lib/persistent-view-data";
 import { hasCapability } from "@/lib/profile";
 import { getCurrentProfile } from "@/lib/session";
 
 export default async function SensorsPage() {
   const profile = await getCurrentProfile();
   const canManageSensors = hasCapability(profile, "manage_sensors");
+  const [plots, sensors] = await Promise.all([
+    getPersistentPlots(),
+    getPersistentSensors(),
+  ]);
+  const readingsBySensor = new Map(
+    await Promise.all(
+      sensors.map(async (sensor) => [
+        sensor.id,
+        await getSensorReadingsForView(sensor.id),
+      ] as const),
+    ),
+  );
   const activeSensors = sensors.filter((sensor) => sensor.status === "ACTIVE");
   const maintenanceSensors = sensors.filter(
     (sensor) => sensor.status === "MAINTENANCE",
@@ -61,9 +73,9 @@ export default async function SensorsPage() {
 
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           {sensors.map((sensor) => {
-            const plot = getSensorPlot(sensor);
-            const readings = getSensorReadings(sensor.id);
-            const trend = getSensorTrend(sensor.id);
+            const plot = getSensorPlotForView(sensor, plots);
+            const readings = readingsBySensor.get(sensor.id) ?? [];
+            const trend = getSensorTrendForView(sensor.id);
 
             return (
               <article

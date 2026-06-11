@@ -16,10 +16,11 @@ export function ReadingForm({ sensors }: { sensors: Sensor[] }) {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setIsSubmitting(true);
     setStatus(initialStatus);
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const sensor = sensors.find(
       (item) => item.id === String(formData.get("sensorId") ?? ""),
     );
@@ -39,7 +40,7 @@ export function ReadingForm({ sensors }: { sensors: Sensor[] }) {
     });
 
     if (response.ok) {
-      event.currentTarget.reset();
+      form.reset();
       setStatus({ type: "success", message: "Lectura registrada correctamente." });
     } else {
       const body = await response.json();

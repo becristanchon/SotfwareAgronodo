@@ -11,10 +11,11 @@ export function ProducerForm() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setIsSubmitting(true);
     setStatus(initialStatus);
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
 
     const payload = {
       fullName: String(formData.get("fullName") ?? ""),
@@ -32,7 +33,7 @@ export function ProducerForm() {
     });
 
     if (response.ok) {
-      event.currentTarget.reset();
+      form.reset();
       setStatus({ type: "success", message: "Productor creado correctamente." });
     } else {
       const body = await response.json();

@@ -12,10 +12,11 @@ export function PlotForm({ farms }: { farms: Farm[] }) {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setIsSubmitting(true);
     setStatus(initialStatus);
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const payload = {
       farmId: String(formData.get("farmId") ?? ""),
       name: String(formData.get("name") ?? ""),
@@ -32,7 +33,7 @@ export function PlotForm({ farms }: { farms: Farm[] }) {
     });
 
     if (response.ok) {
-      event.currentTarget.reset();
+      form.reset();
       setStatus({ type: "success", message: "Lote creado correctamente." });
     } else {
       const body = await response.json();

@@ -6,21 +6,28 @@ import { FarmPriorityPanel } from "@/components/farm-priority-panel";
 import { RestrictedAction } from "@/components/restricted-action";
 import { StatCard } from "@/components/stat-card";
 import {
-  farms,
   getFarmMaturity,
-  getFarmPlots,
   getFarmProfile,
   getFarmWaterProfile,
-  producers,
 } from "@/lib/demo-data";
 import { getCropLiveState } from "@/lib/crop-live-state";
 import { getFarmLiveSummary } from "@/lib/farm-live-summary";
+import {
+  getPersistentFarms,
+  getPersistentPlots,
+  getPersistentProducers,
+} from "@/lib/persistent-view-data";
 import { hasCapability } from "@/lib/profile";
 import { getCurrentProfile } from "@/lib/session";
 
 export default async function FarmsPage() {
   const profile = await getCurrentProfile();
   const canManageFarms = hasCapability(profile, "manage_farms");
+  const [farms, producers, plots] = await Promise.all([
+    getPersistentFarms(),
+    getPersistentProducers(),
+    getPersistentPlots(),
+  ]);
   const totalArea = farms.reduce((total, farm) => total + farm.areaHa, 0);
 
   return (
@@ -71,7 +78,7 @@ export default async function FarmsPage() {
 
         <div className="mt-6 grid gap-4">
           {farms.map((farm) => {
-            const farmPlots = getFarmPlots(farm.id);
+            const farmPlots = plots.filter((plot) => plot.farmId === farm.id);
             const farmSummary = getFarmLiveSummary(farm);
 
             return (

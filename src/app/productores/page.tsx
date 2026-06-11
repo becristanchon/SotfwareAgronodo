@@ -3,13 +3,21 @@ import { ProducerForm } from "@/components/producer-form";
 import { ProducerProfileCard } from "@/components/producer-profile-card";
 import { RestrictedAction } from "@/components/restricted-action";
 import { StatCard } from "@/components/stat-card";
-import { farms, getProducerProfile, producers } from "@/lib/demo-data";
+import {
+  getPersistentFarms,
+  getPersistentProducers,
+  getProducerProfileForView,
+} from "@/lib/persistent-view-data";
 import { hasCapability } from "@/lib/profile";
 import { getCurrentProfile } from "@/lib/session";
 
 export default async function ProducersPage() {
   const profile = await getCurrentProfile();
   const canManageProducers = hasCapability(profile, "manage_producers");
+  const [producers, farms] = await Promise.all([
+    getPersistentProducers(),
+    getPersistentFarms(),
+  ]);
 
   return (
     <AppShell>
@@ -69,7 +77,7 @@ export default async function ProducersPage() {
                 farms={producerFarms}
                 key={producer.id}
                 producer={producer}
-                profile={getProducerProfile(producer.id)}
+                profile={getProducerProfileForView(producer.id)}
               />
             );
           })}

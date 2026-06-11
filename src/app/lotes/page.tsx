@@ -4,19 +4,27 @@ import { PlotProfileCard } from "@/components/plot-profile-card";
 import { RestrictedAction } from "@/components/restricted-action";
 import { StatCard } from "@/components/stat-card";
 import {
-  farms,
-  getPlotAlerts,
-  getPlotFarm,
-  getPlotProfile,
-  getPlotSensors,
-  plots,
-} from "@/lib/demo-data";
+  getPersistentAlerts,
+  getPersistentFarms,
+  getPersistentPlots,
+  getPersistentSensors,
+  getPlotAlertsForView,
+  getPlotFarmForView,
+  getPlotProfileForView,
+  getPlotSensorsForView,
+} from "@/lib/persistent-view-data";
 import { hasCapability } from "@/lib/profile";
 import { getCurrentProfile } from "@/lib/session";
 
 export default async function PlotsPage() {
   const profile = await getCurrentProfile();
   const canManagePlots = hasCapability(profile, "manage_plots");
+  const [farms, plots, sensors, alerts] = await Promise.all([
+    getPersistentFarms(),
+    getPersistentPlots(),
+    getPersistentSensors(),
+    getPersistentAlerts(),
+  ]);
   const riskyPlots = plots.filter((plot) => plot.status !== "Estable").length;
 
   return (
@@ -67,17 +75,17 @@ export default async function PlotsPage() {
 
         <div className="mt-6 grid gap-4 xl:grid-cols-2">
           {plots.map((plot) => {
-            const farm = getPlotFarm(plot);
-            const alerts = getPlotAlerts(plot.id);
+            const farm = getPlotFarmForView(plot, farms);
+            const plotAlerts = getPlotAlertsForView(plot.id, alerts);
 
             return (
               <PlotProfileCard
-                alerts={alerts.length}
+                alerts={plotAlerts.length}
                 farm={farm}
                 key={plot.id}
                 plot={plot}
-                profile={getPlotProfile(plot.id)}
-                sensors={getPlotSensors(plot.id).length}
+                profile={getPlotProfileForView(plot.id)}
+                sensors={getPlotSensorsForView(plot.id, sensors).length}
               />
             );
           })}

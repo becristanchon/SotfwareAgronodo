@@ -12,10 +12,11 @@ export function FarmForm({ producers }: { producers: Producer[] }) {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setIsSubmitting(true);
     setStatus(initialStatus);
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const payload = {
       producerId: String(formData.get("producerId") ?? ""),
       name: String(formData.get("name") ?? ""),
@@ -32,7 +33,7 @@ export function FarmForm({ producers }: { producers: Producer[] }) {
     });
 
     if (response.ok) {
-      event.currentTarget.reset();
+      form.reset();
       setStatus({ type: "success", message: "Finca creada correctamente." });
     } else {
       const body = await response.json();

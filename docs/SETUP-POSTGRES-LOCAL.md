@@ -16,7 +16,7 @@ Crea `.env` usando `.env.example` como base:
 
 ```txt
 DATABASE_URL="postgresql://agronodo:agronodo@localhost:5432/agronodo?schema=public"
-JWT_SECRET="change-this-before-production"
+AGRONODO_AUTH_SECRET="change-this-before-production"
 ```
 
 ## Comandos
